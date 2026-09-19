@@ -1,19 +1,20 @@
 import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 
-let _geminiModel: GenerativeModel | null = null;
+const _geminiModels = new Map<string, GenerativeModel>();
 
 export function getGeminiModel(modelName: string = "gemini-3.6-flash"): GenerativeModel {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("Missing GEMINI_API_KEY environment variable in .env.local");
   }
-  if (!_geminiModel) {
+  if (!_geminiModels.has(modelName)) {
     const genAI = new GoogleGenerativeAI(apiKey);
-    _geminiModel = genAI.getGenerativeModel({
-      model: modelName,
-    });
+    _geminiModels.set(
+      modelName,
+      genAI.getGenerativeModel({ model: modelName })
+    );
   }
-  return _geminiModel;
+  return _geminiModels.get(modelName)!;
 }
 
 export async function generateAIResponse(

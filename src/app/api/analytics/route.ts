@@ -9,6 +9,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "business_id required" }, { status: 400 });
   }
 
+  // First fetch conversation IDs for this business to scope messages
+  const { data: bizConvs } = await supabaseAdmin
+    .from("conversations")
+    .select("id")
+    .eq("business_id", businessId);
+
+  const convIds = (bizConvs || []).map((c) => c.id);
+
   const [convResult, leadsResult, escalationsResult, messagesResult] =
     await Promise.all([
       supabaseAdmin
@@ -23,12 +31,16 @@ export async function GET(req: NextRequest) {
         .from("escalations")
         .select("id")
         .eq("business_id", businessId),
-      supabaseAdmin
-        .from("messages")
-        .select("role, content, created_at, conversation_id")
-        .eq("role", "customer")
-        .order("created_at", { ascending: false })
-        .limit(100),
+      // Only fetch messages belonging to this business's conversations
+      convIds.length > 0
+        ? supabaseAdmin
+            .from("messages")
+            .select("role, content, created_at, conversation_id")
+            .eq("role", "customer")
+            .in("conversation_id", convIds)
+            .order("created_at", { ascending: false })
+            .limit(100)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
   const conversations = convResult.data || [];

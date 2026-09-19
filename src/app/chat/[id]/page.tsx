@@ -120,10 +120,10 @@ export default function ChatPage() {
           } as Conversation);
         }
 
-        // Replace temp message + append AI response
+        // Replace temp message + append AI response (only if present)
         setMessages((prev) => {
           const withoutTemp = prev.filter((m) => m.id !== tempMsg.id);
-          return [
+          const newMessages = [
             ...withoutTemp,
             {
               id: `cust-${Date.now()}`,
@@ -133,8 +133,11 @@ export default function ChatPage() {
               metadata: null,
               created_at: new Date().toISOString(),
             },
-            data.ai_message,
           ];
+          if (data.ai_message) {
+            newMessages.push(data.ai_message);
+          }
+          return newMessages;
         });
       }
     } catch (err) {

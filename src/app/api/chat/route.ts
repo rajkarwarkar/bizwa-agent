@@ -81,7 +81,19 @@ export async function POST(req: NextRequest) {
       .order("created_at", { ascending: true })
       .limit(20);
 
-    const history = (historyMessages || []).slice(0, -1); // exclude the message we just inserted
+    // Build history excluding the customer message we just inserted
+    // (which is the latest customer message with matching content)
+    const allMessages = historyMessages || [];
+    let excludedInserted = false;
+    const history = [];
+    for (let i = allMessages.length - 1; i >= 0; i--) {
+      const m = allMessages[i];
+      if (!excludedInserted && m.role === "customer" && m.content === message) {
+        excludedInserted = true; // skip this one — it's the message we just inserted
+        continue;
+      }
+      history.unshift(m);
+    }
 
     // Retrieve knowledge
     const knowledgeItems = await retrieveKnowledge(business_id, message);
