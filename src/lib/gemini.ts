@@ -1,10 +1,20 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+let _geminiModel: GenerativeModel | null = null;
 
-export const geminiModel = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash",
-});
+export function getGeminiModel(modelName: string = "gemini-3.6-flash"): GenerativeModel {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing GEMINI_API_KEY environment variable in .env.local");
+  }
+  if (!_geminiModel) {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    _geminiModel = genAI.getGenerativeModel({
+      model: modelName,
+    });
+  }
+  return _geminiModel;
+}
 
 export async function generateAIResponse(
   systemPrompt: string,
@@ -12,6 +22,7 @@ export async function generateAIResponse(
   userMessage: string
 ): Promise<string> {
   try {
+    const model = getGeminiModel();
     const contents = [
       ...conversationHistory.map((msg) => ({
         role: msg.role === "customer" ? "user" : "model",
@@ -20,7 +31,7 @@ export async function generateAIResponse(
       { role: "user", parts: [{ text: userMessage }] },
     ];
 
-    const result = await geminiModel.generateContent({
+    const result = await model.generateContent({
       contents,
       systemInstruction: systemPrompt,
     });

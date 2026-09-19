@@ -209,9 +209,9 @@ export default function ConversationDetailPage() {
         {/* Messages */}
         <ScrollArea className="flex-1 p-4">
           <div className="max-w-2xl mx-auto space-y-3">
-            {messages.map((msg) => (
+            {messages.map((msg, idx) => (
               <div
-                key={msg.id}
+                key={msg.id ? `${msg.id}-${idx}` : idx}
                 className={cn(
                   "message-animate flex",
                   msg.role === "customer" ? "justify-start" : "justify-end"

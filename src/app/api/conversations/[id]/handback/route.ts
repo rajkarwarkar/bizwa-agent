@@ -6,7 +6,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const body = await req.json();
+  let body: { note?: string } = {};
+  try {
+    body = await req.json();
+  } catch {
+    body = {};
+  }
 
   const { error } = await supabaseAdmin
     .from("conversations")
